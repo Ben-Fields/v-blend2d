@@ -1,12 +1,23 @@
 # v-blend2d
- V wrapper for Blend2D.
+
+V wrapper for [Blend2D](https://github.com/blend2d/blend2d), a vector graphics library ([website](https://blend2d.com/)).
+
+Provides a `blend2d` module; clone to `~.vmodules/blend2d` or install with [vpm](https://vpm.vlang.io/) (yet unpublished to vpm).
 
 ## Building the Blend2D library manually
+
+### Future
+
+In the future, either:
+ - a V or C version will be gnerated and provided to work with V's build steps (best)
+ - a V build script to detect the platform and build automatically will be provided
+ - binaries will be generated and provided (worst-case)
 
 ### Prerequisites
 * [V](https://vlang.io/)
 * C++ compiler
 * [cmake](https://cmake.org/download/)
+
 ### Instructions
 ```
 cd ./blend2d/build
@@ -14,7 +25,7 @@ cmake ../c -DCMAKE_BUILD_TYPE=Release -DASMJIT_DIR="../asmjit" -DCMAKE_C_STANDAR
 cmake --build . --config Release
 
 cd ../..
-v ./v-blend2d.v -show-c-output -showcc
+v ./blend2d.v -show-c-output -showcc
 ```
 
 If the above does not work, ensure both the library and your v program are compiled with the same compiler:
@@ -30,23 +41,6 @@ GNU compilers prior to Cmake 3.1 require `-DCMAKE_C_FLAGS="-std=gnu99"`. All oth
 
 To look into: Make a v build script to detect the platform and build automatically.
 
-## Status
+## Contributing
 
-### Implemented
-
-- Image
-- ...
-
-### Future Additions
-
-- `(Context) set_fill_style()` (and other applicable functions) with a Style sum type
-- Possible: Replace BLRgba32 with gx.rgba? (different byte order)
-  - Add BLRgba64 equivalent to vlib's gx?
-  - Either fix warnings somehow (from current union type) or do something else
-- `BLFontData` and `BLFontManager`
-  - Possible: Or see if vlib font handling is sufficient
-- `BLGlyphBuffer` and `BLGlyphRun` implementations via `[]rune`
-- `BLMatrix2D`
-  - Possible: Unless a V matrix lib exists?
-- `BLPixelConverter`
-- `BLRegion` (undecided)
+Components are currently added as needed. See [CONTRIBUTING.md](https://github.com/Ben-Fields/v-blend2d/blob/master/CONTRIBUTING.md) to add something you're missing. It's easy!

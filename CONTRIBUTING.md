@@ -58,3 +58,25 @@ must compile the library for the relevant platform (V can only compile C and V i
 steps). In the future, "c2v" could eliminate this dependency, and/or a build script could be 
 provided since V does not have a sophisticated build system. In the "c2v" case, I am not sure 
 if some of the library's optimizations could be successfully translated.
+
+## Status
+
+### Implemented
+
+- Image
+- ...
+
+### Future Additions
+
+- `(Context) set_fill_style()` (and other applicable functions) with a Style sum type
+- Possible: Replace BLRgba32 with gx.rgba? (different byte order)
+  - Add BLRgba64 equivalent to vlib's gx?
+  - Either fix warnings somehow (from current union type) or do something else
+- `BLFontData` and `BLFontManager`
+  - Possible: Or see if vlib font handling is sufficient
+- `BLGlyphBuffer` and `BLGlyphRun` implementations via `[]rune`
+- `BLMatrix2D`
+  - Possible: Unless a V matrix lib exists?
+- `BLPixelConverter`
+- `BLRegion` (undecided)
+- Short doc
