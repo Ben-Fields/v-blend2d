@@ -1,0 +1,23 @@
+// NOTES
+
+sg_image_desc default configuration
+    .type:              SG_IMAGETYPE_2D
+    .render_target:     false
+    .width              0 (must be set to >0)
+    .height             0 (must be set to >0)
+    .num_slices         1 (3D textures: depth; array textures: number of layers)
+    .num_mipmaps:       1
+    .usage:             SG_USAGE_IMMUTABLE
+    .pixel_format:      SG_PIXELFORMAT_RGBA8 for textures, or sg_desc.context.color_format for render targets
+    .sample_count:      1 for textures, or sg_desc.context.sample_count for render targets
+    .min_filter:        SG_FILTER_NEAREST
+    .mag_filter:        SG_FILTER_NEAREST
+    .wrap_u:            SG_WRAP_REPEAT
+    .wrap_v:            SG_WRAP_REPEAT
+    .wrap_w:            SG_WRAP_REPEAT (only SG_IMAGETYPE_3D)
+    .border_color       SG_BORDERCOLOR_OPAQUE_BLACK
+    .max_anisotropy     1 (must be 1..16)
+    .min_lod            0.0f
+    .max_lod            FLT_MAX
+    .data               an sg_image_data struct to define the initial content
+    .label              0       (optional string label for trace hooks)
