@@ -41,8 +41,6 @@ If the above does not work, ensure both the library and your v program are compi
 IDEs such as Visual Studio or Xcode require `--config Release`. Other IDEs/compilers require `-DCMAKE_BUILD_TYPE=Release`.
 GNU compilers prior to Cmake 3.1 require `-DCMAKE_C_FLAGS="-std=gnu99"`. All other compilers require `-DCMAKE_C_STANDARD=99`. (gnu99 is the C standard used by V).
 
-To look into: Make a v build script to detect the platform and build automatically.
-
 ## Contributing
 
 Components are currently added as needed. See [CONTRIBUTING.md](https://github.com/Ben-Fields/v-blend2d/blob/master/CONTRIBUTING.md) to add something you're missing. It's easy!
