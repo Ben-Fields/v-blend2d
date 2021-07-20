@@ -2,7 +2,7 @@
 
 V wrapper for [Blend2D](https://github.com/blend2d/blend2d), a vector graphics library ([website](https://blend2d.com/)).
 
-Provides a `blend2d` module; clone to `~.vmodules/blend2d` or install with [vpm](https://vpm.vlang.io/) (yet unpublished to vpm).
+Provides a `blend2d` module; clone to `~/.vmodules/blend2d` or install with [vpm](https://vpm.vlang.io/) (yet unpublished to vpm).
 
 [There are plenty of examples to get started!](https://github.com/Ben-Fields/v-blend2d-examples)
 
