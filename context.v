@@ -46,6 +46,13 @@ pub enum CompOp {
 	count			// Count of composition & blending operators. 
 }
 
+struct C.BLContextCookie {
+}
+// Holds an arbitrary 128-bit value (cookie) that can be used with `Context.save()` 
+// and `Context.restore()` operations. It allows to "lock" some state that can only 
+// be unlocked by a matching cookie; don't confuse cookies with security.
+type ContextCookie = C.BLContextCookie
+
 // ============================================================================
 // Context - Init / Destroy
 // ============================================================================
@@ -114,9 +121,9 @@ pub fn (ctx &Context) set_comp_op(comp_op CompOp) {
 
 // Set fill style - color (RGBA32).
 [inline]
-pub fn (ctx &Context) set_fill_color(rgba32 Rgba32) {
+pub fn (ctx &Context) set_fill_color(color Rgba) {
 	func := ctx.impl.virt.setStyleRgba32[C_OpType.fill]
-	res := func(ctx.impl, rgba32.value)
+	res := func(ctx.impl, color.raw())
 	// TODO: cgen checker bug
 	// res := ctx.impl.virt.setStyleRgba32[C_OpType.fill](ctx.impl, rgba32.value)
 	if res != 0 {
@@ -163,9 +170,9 @@ pub fn (ctx &Context) set_fill_pattern(pattern &Pattern) {
 
 // Set stroke style - color (RGBA32).
 [inline]
-pub fn (ctx &Context) set_stroke_color(rgba32 Rgba32) {
+pub fn (ctx &Context) set_stroke_color(color Rgba) {
 	func := ctx.impl.virt.setStyleRgba32[C_OpType.stroke]
-	res := func(ctx.impl, rgba32.value)
+	res := func(ctx.impl, color.raw())
 	// TODO: cgen checker bug
 	// res := ctx.impl.virt.setStyleRgba32[C_OpType.stroke](ctx.impl, rgba32.value)
 	if res != 0 {
@@ -381,7 +388,7 @@ pub fn (ctx &Context) stroke_string(x f64, y f64, font &Font, str string) {
 // Context - Matrix Operations
 // ============================================================================
 
-// Reset the transofmration matrix.
+// Reset the user transformation matrix.
 [inline]
 pub fn (ctx &Context) reset_matrix() {
 	res := ctx.impl.virt.matrixOp(ctx.impl, C_BLMatrix2DOp.reset, voidptr(0))
@@ -449,6 +456,90 @@ pub fn (ctx &Context) scale_xy(scale_x f64, scale_y f64) {
 	if res != 0 {
 		panic(IError(Result{
 			msg: "'Scale XY' operation failed for rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Translate by vector [x, y].
+[inline]
+pub fn (ctx &Context) translate(x f64, y f64) {
+	res := ctx.impl.virt.matrixOp(ctx.impl, C_BLMatrix2DOp.translate, [x, y].data)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Translate' operation failed for rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Skew by [x, y].
+[inline]
+pub fn (ctx &Context) skew(x f64, y f64) {
+	res := ctx.impl.virt.matrixOp(ctx.impl, C_BLMatrix2DOp.skew, [x, y].data)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Skew' operation failed for rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Add the transform of the given matrix to the user matrix.
+[inline]
+pub fn (ctx &Context) transform(matrix &Matrix2D) {
+	res := ctx.impl.virt.matrixOp(ctx.impl, C_BLMatrix2DOp.transform, matrix)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Transform' operation failed for rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Saves the current rendering context state.
+[inline]
+pub fn (ctx &Context) save() {
+	res := ctx.impl.virt.save(ctx.impl, voidptr(0))
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Save' operation failed for rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Restores the top-most saved context-state.
+[inline]
+pub fn (ctx &Context) restore() {
+	res := ctx.impl.virt.restore(ctx.impl, voidptr(0))
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Restore' operation failed for rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Saves the current rendering context state and creates a restoration `cookie`.
+[inline]
+pub fn (ctx &Context) save_cookie(cookie &ContextCookie) {
+	res := ctx.impl.virt.save(ctx.impl, cookie)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Save Cookie' operation failed for rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Restores to the point that matches the given `cookie`.
+[inline]
+pub fn (ctx &Context) restore_cookie(cookie &ContextCookie) {
+	res := ctx.impl.virt.restore(ctx.impl, cookie)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Restore Cookie' operation failed for rendering context."
 			result: ResultCode(res)
 		}))
 	}

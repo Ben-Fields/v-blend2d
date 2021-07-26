@@ -26,15 +26,6 @@ struct C.BLImageCore {
 // Image.
 pub type Image = C.BLImageCore
 
-// Image Pixel Format.
-pub enum Format {
-	@none   // None or invalid pixel format.
-	prgb32  // 32-bit premultiplied ARGB pixel format (8-bit components).
-	xrgb32  // 32-bit (X)RGB pixel format (8-bit components, alpha ignored).
-	a8      // 8-bit alpha-only pixel format.
-	count   // Count of pixel formats.
-}
-
 struct C.BLImageData {
 	pixelData voidptr
 	stride    /*inteptr_t*/int
@@ -45,7 +36,7 @@ struct C.BLImageData {
 // Data describing a raster image.
 pub type ImageData = C.BLImageData
 
-//! Filter type used by `BLImage::scale()`.
+// Filter type used by `BLImage::scale()`.
 enum ScaleFilter {
 	@none    = 0  // No filter or uninitialized.
 	nearest  = 1  // Nearest neighbor filter (radius 1.0).

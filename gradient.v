@@ -119,7 +119,7 @@ pub fn new_conical_gradient(x0 f64, y0 f64, angle f64, cfg GradientCfg) &Gradien
 
 // Create a new linear gradient.
 [inline]
-pub fn (grad &Gradient) get_type() GradientType {
+pub fn (grad &Gradient) @type() GradientType {
 	return GradientType(grad.impl.gradientType)
 }
 
@@ -130,11 +130,64 @@ pub fn (grad &Gradient) get_type() GradientType {
 fn C.blGradientAddStopRgba32(/*mut*/ self &C.BLGradientCore, offset f64, argb32 u32) BLResult
 // Add color stop (keyframe) to the gradient (RGBA32).
 [inline]
-pub fn (grad &Gradient) add_stop(offset f64, color Rgba32) {
-	res := C.blGradientAddStopRgba32(grad, offset, color.value)
+pub fn (grad &Gradient) add_stop(offset f64, color Rgba) {
+	res := C.blGradientAddStopRgba32(grad, offset, color.raw())
 	if res != 0 {
 		panic(IError(Result{
-			msg: "Could not add stop to gradient."
+			msg: "'Add Stop' operation failed for gradient."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+fn C.blGradientResetStops(/*mut*/ self &C.BLGradientCore) BLResult
+// Remove all stops from the gradient.
+[inline]
+pub fn (grad &Gradient) reset_stops() {
+	res := C.blGradientResetStops(grad)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Reset Stops' operation failed for gradient."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+
+fn C.blGradientSetValues(/*mut*/ self &C.BLGradientCore, index size_t, values &C.double, n size_t) BLResult
+// Set the shape attributes of the (first) linear gradient.
+[inline]
+pub fn (grad &Gradient) set_linear_values(x0 f64, y0 f64, x1 f64, y1 f64) {
+	res := C.blGradientSetValues(grad, 0, [x0, y0, x1, y1].data, 4)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Set Linear Values' operation failed for gradient."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+fn C.blGradientSetValues(/*mut*/ self &C.BLGradientCore, index size_t, values &C.double, n size_t) BLResult
+// Set the shape attributes of the (first) radial gradient.
+[inline]
+pub fn (grad &Gradient) set_radial_values(x0 f64, y0 f64, x1 f64, y1 f64, r0 f64) {
+	res := C.blGradientSetValues(grad, 0, [x0, y0, x1, y1, r0].data, 5)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Set Radial Values' operation failed for gradient."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+fn C.blGradientSetValues(/*mut*/ self &C.BLGradientCore, index size_t, values &C.double, n size_t) BLResult
+// Set the shape attributes of the (first) conical gradient.
+[inline]
+pub fn (grad &Gradient) set_conical_values(x0 f64, y0 f64, angle f64) {
+	res := C.blGradientSetValues(grad, 0, [x0, y0, angle].data, 3)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Set Conical Values' operation failed for gradient."
 			result: ResultCode(res)
 		}))
 	}

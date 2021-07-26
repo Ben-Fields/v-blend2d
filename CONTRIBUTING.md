@@ -6,11 +6,12 @@ The code is organized similarly to the Blend2D source code.
 
 The goal is feature parity with the C++ API.
 
-There are three primary sources for adding functions to the V API:
- - Functions directly from the public C API.
+There are four primary sources for adding functions to the V API:
+ - Functions directly from the public C API (`bl...`).
  - Functions form a struct's virtual function table.
  - Multiple functions derived from a single C function, where a parameter 
    significantly alters the function's behavior.
+ - Rewritten compound functions from the C++ API (object member functions).
 
 Functions are added from the above sources when the functions are not intermediate functions.
 
@@ -32,8 +33,12 @@ In both cases above, while the simplified API is provided, one multi-use funcito
 along with the original enumerator so the user can efiiciently switch funcitonalities if 
 desired without re-creating the original code. Ex. `set_fill_style()` and `add_geometry()`. 
 
+Some functions have multiple variants based on input parameter type.
+ - For `int` and `double` variants, `f64` is the default with no suffix.
+ - For rgba32 and rgba64 variants, rgba32 is the default with no suffix.
+
 Other aspects of conversion are straightforward. Ex. convert to snake_case by V convention.
-Remove redundant prefixes sicne V has proper scoping.
+Remove redundant prefixes since V has proper scoping.
 
 ## Error handling
 

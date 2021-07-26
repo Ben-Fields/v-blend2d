@@ -246,13 +246,13 @@ fn C.blGradientGetType(self &C.BLGradientCore) u32
 fn C.blGradientSetType(/*mut*/ self &C.BLGradientCore, @type u32) BLResult
 fn C.blGradientGetValue(self &C.BLGradientCore, index size_t) f64
 fn C.blGradientSetValue(/*mut*/ self &C.BLGradientCore, index size_t, value f64) BLResult
-fn C.blGradientSetValues(/*mut*/ self &C.BLGradientCore, index size_t, values &C.double, n size_t) BLResult
+// fn C.blGradientSetValues(/*mut*/ self &C.BLGradientCore, index size_t, values &C.double, n size_t) BLResult
 fn C.blGradientGetExtendMode(/*mut*/ self &C.BLGradientCore) u32
 fn C.blGradientSetExtendMode(/*mut*/ self &C.BLGradientCore, extendMode u32) BLResult
 fn C.blGradientGetSize(self &C.BLGradientCore) size_t
 fn C.blGradientGetCapacity(self &C.BLGradientCore) size_t
 fn C.blGradientGetStops(self &C.BLGradientCore) &C.BLGradientStop
-fn C.blGradientResetStops(/*mut*/ self &C.BLGradientCore) BLResult
+// fn C.blGradientResetStops(/*mut*/ self &C.BLGradientCore) BLResult
 fn C.blGradientAssignStops(/*mut*/ self &C.BLGradientCore, stops &C.BLGradientStop, n size_t) BLResult
 // fn C.blGradientAddStopRgba32(/*mut*/ self &C.BLGradientCore, offset f64, argb32 u32) BLResult
 fn C.blGradientAddStopRgba64(/*mut*/ self &C.BLGradientCore, offset f64, argb64 u64) BLResult
@@ -405,12 +405,12 @@ fn C.blPatternEquals(a &C.BLPatternCore, b &C.BLPatternCore) bool
 
 // Planned.
 // fn C.blPixelConverterInit(/*mut*/ self &C.BLPixelConverterCore) BLResult
-// fn C.blPixelConverterInitWeak(/*mut*/ self &C.BLPixelConverterCore, other &C.BLPixelConverterCore) BLResult
-// fn C.blPixelConverterDestroy(/*mut*/ self &C.BLPixelConverterCore) BLResult
-// fn C.blPixelConverterReset(/*mut*/ self &C.BLPixelConverterCore) BLResult
-// fn C.blPixelConverterAssign(/*mut*/ self &C.BLPixelConverterCore, other &C.BLPixelConverterCore) BLResult
+fn C.blPixelConverterInitWeak(/*mut*/ self &C.BLPixelConverterCore, other &C.BLPixelConverterCore) BLResult
+fn C.blPixelConverterDestroy(/*mut*/ self &C.BLPixelConverterCore) BLResult
+fn C.blPixelConverterReset(/*mut*/ self &C.BLPixelConverterCore) BLResult
+fn C.blPixelConverterAssign(/*mut*/ self &C.BLPixelConverterCore, other &C.BLPixelConverterCore) BLResult
 // fn C.blPixelConverterCreate(/*mut*/ self &C.BLPixelConverterCore, dstInfo &C.BLFormatInfo, srcInfo &C.BLFormatInfo, createFlags u32) BLResult
-// fn C.blPixelConverterConvert(self &C.BLPixelConverterCore, /*mut*/ dstData voidptr, dstStride /*intptr_t*/int, srcData voidptr, srcStride /*intptr_t*/int, w u32, h u32, options &C.BLPixelConverterOptions) BLResult
+fn C.blPixelConverterConvert(self &C.BLPixelConverterCore, /*mut*/ dstData voidptr, dstStride /*intptr_t*/int, srcData voidptr, srcStride /*intptr_t*/int, w u32, h u32, options &C.BLPixelConverterOptions) BLResult
 
 
 // Not planned. (Use V builtin).
