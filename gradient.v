@@ -4,9 +4,7 @@ module blend2d
 // Gradient - Definitions
 // ============================================================================
 
-struct C_GradientStops {
-	
-}
+[noinit]
 struct C.BLGradientImpl {
 	capacity size_t // Stop capacity.
 
@@ -34,6 +32,7 @@ struct C.BLGradientImpl {
 	// BLConicalGradientValues conical // Conical parameters.
 	//}
 }
+[noinit]
 struct C.BLGradientCore {
 	impl &C.BLGradientImpl = voidptr(0)
 }
@@ -52,10 +51,22 @@ pub enum GradientType {
 // Defines an `offset` and `rgba` color that is used by `BLGradient` to define
 // a linear transition between colors.
 struct C.BLGradientStop {
+pub mut:
 	offset f64
-	rgba Rgba64
+	rgba Rgba64 // TODO: With the pure_v version of rgba.v, this should be `Rgba64`, but the C compiler tries to convert to uint64_t and fails.
+	         //       This behavior only happens when there is an init function defined, like below.
+	         //         (That is, any funciton that returns `GradientStop`).
 }
 pub type GradientStop = C.BLGradientStop
+
+// Convenience function for `GradientStop`
+[inline]
+pub fn gradient_stop(offset f64, rgba Rgba64) GradientStop {
+	return GradientStop{
+		offset: offset
+		rgba: rgba
+	}
+}
 
 // Gradient creation optional arguments.
 pub struct GradientCfg {
@@ -113,14 +124,55 @@ pub fn new_conical_gradient(x0 f64, y0 f64, angle f64, cfg GradientCfg) &Gradien
 	return grad
 }
 
+fn C.blGradientDestroy(/*mut*/ self &C.BLGradientCore) BLResult
+// Free the Gradient data from memory. (Called by V's autofree engine).
+[inline]
+pub fn (grad &Gradient) free() {
+	C.blGradientDestroy(grad)
+}
+
 // ============================================================================
 // Gradient - Get Information
 // ============================================================================
 
-// Create a new linear gradient.
+// Get the type of the gradient (linear, radial, conical).
 [inline]
 pub fn (grad &Gradient) @type() GradientType {
 	return GradientType(grad.impl.gradientType)
+}
+
+fn C.blGradientSetType(/*mut*/ self &C.BLGradientCore, @type u32) BLResult
+// Set the type of the gradient (linear, radial, conical).
+[inline]
+pub fn (grad &Gradient) set_type(@type GradientType) {
+	res := C.blGradientSetType(grad, u32(@type))
+	if res != 0 {
+		println(res)
+		println(ResultCode(res))
+		panic(IError(Result{
+			msg: "'Set Type' failed for gradient."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Get the extend mode of the gradient (pad, repeat, reflect, or combination).
+[inline]
+pub fn (grad &Gradient) extend_mode() ExtendMode {
+	return ExtendMode(grad.impl.extendMode)
+}
+
+fn C.blGradientSetExtendMode(/*mut*/ self &C.BLGradientCore, extendMode u32) BLResult
+// Set the extend of the gradient (pad, repeat, reflect, or combination).
+[inline]
+pub fn (grad &Gradient) set_extend_mode(mode ExtendMode) {
+	res := C.blGradientSetExtendMode(grad, u32(mode))
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Set Extend Mode' failed for gradient."
+			result: ResultCode(res)
+		}))
+	}
 }
 
 // ============================================================================
@@ -131,7 +183,7 @@ fn C.blGradientAddStopRgba32(/*mut*/ self &C.BLGradientCore, offset f64, argb32 
 // Add color stop (keyframe) to the gradient (RGBA32).
 [inline]
 pub fn (grad &Gradient) add_stop(offset f64, color Rgba) {
-	res := C.blGradientAddStopRgba32(grad, offset, color.raw())
+	res := C.blGradientAddStopRgba32(grad, offset, color.value)
 	if res != 0 {
 		panic(IError(Result{
 			msg: "'Add Stop' operation failed for gradient."
@@ -233,3 +285,7 @@ enum C_BLGradientValue {
 
 	count = 6  //! Count of gradient values.
 }
+
+// struct C_GradientStops { // TODO
+	
+// }

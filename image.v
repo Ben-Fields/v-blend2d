@@ -28,10 +28,10 @@ pub type Image = C.BLImageCore
 
 struct C.BLImageData {
 	pixelData voidptr
-	stride    /*inteptr_t*/int
-	size      Size
+	stride    /*intptr_t*/int
+	size      SizeI
 	format    Format
-	flags     u32
+	flags     FormatFlags
 }
 // Data describing a raster image.
 pub type ImageData = C.BLImageData
@@ -127,6 +127,22 @@ fn C.blImageDestroy(self &C.BLImageCore) BLResult
 [inline]
 pub fn (img &Image) free() {
 	C.blImageDestroy(img)
+}
+
+// ============================================================================
+// Image - Init / Destroy
+// ============================================================================
+
+// Returns the width of the image.
+[inline]
+pub fn (img &Image) width() int {
+	return img.impl.size.w
+}
+
+// Returns the height of the image.
+[inline]
+pub fn (img &Image) height() int {
+	return img.impl.size.h
 }
 
 // ============================================================================
@@ -252,7 +268,7 @@ fn C.blImageScale(/*mut*/ dst &C.BLImageCore, src &C.BLImageCore, size &C.BLSize
 pub fn (img &Image) scale(new_w int, new_h int, filter ScaleFilter) ?&Image {
 	mut img_copy := &Image{}
 	C.blImageInit(img_copy)
-	res := C.blImageScale(/*mut*/ img_copy, img, &Size{w: new_w, h: new_h}, u32(filter), voidptr(0))
+	res := C.blImageScale(/*mut*/ img_copy, img, &SizeI{w: new_w, h: new_h}, u32(filter), voidptr(0))
 	if res != 0 {
 		return IError(Result{
 			msg: "Could not create scaled image copy."

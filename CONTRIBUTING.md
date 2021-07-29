@@ -15,7 +15,7 @@ There are four primary sources for adding functions to the V API:
 
 Functions are added from the above sources when the functions are not intermediate functions.
 
-## Naming convention
+## Organization and Naming convention
 
 The API is simplified where possible, and a slightly different naming convention 
 is consequently followed to maintain conciseness. For instance, V does not allow 
@@ -37,12 +37,16 @@ Some functions have multiple variants based on input parameter type.
  - For `int` and `double` variants, `f64` is the default with no suffix.
  - For rgba32 and rgba64 variants, rgba32 is the default with no suffix.
 
+Most structs are presented as opaque (marked with `[noinit]` and the contents are not visible). 
+In this case, the initialization function is prefixed with `new_`. Otherwise, such as for colors 
+and geometric constructs, the init fn just returns the relevant data struct, so there is no prefix.
+
 Other aspects of conversion are straightforward. Ex. convert to snake_case by V convention.
 Remove redundant prefixes since V has proper scoping.
 
 ## Error handling
 
-All funcitons in the Blend2D API return `BLResult`, the library's error enum. In some cases, 
+All functions in the Blend2D API return `BLResult`, the library's error enum. In some cases, 
 as in the `bl***Init()` functions, the result may be ignored as stated explicitly in the 
 Blend2D documentation. Where a function poses a reasonable threat in failing, such as in 
 resource handling, an error option type is returned by the V function. Otherwise, to avoid 
@@ -53,8 +57,8 @@ an error is unlikely, and may be cought in the future with the addition of `reco
 
 When redeclaraing C functions in V, the V compiler does not allow function 
 parameters to be declared with "mut". Therefore, all such parameters (any C parameter 
-which is not "const"), is marked with a comment: "/*mut*/". Variables passed into the function 
-are treated accordingly.
+which is not "const"), are marked with a comment: "/*mut*/". Variables passed into the function 
+are still treated accordingly.
 
 ## Building
 
@@ -64,24 +68,41 @@ steps). In the future, "c2v" could eliminate this dependency, and/or a build scr
 provided since V does not have a sophisticated build system. In the "c2v" case, I am not sure 
 if some of the library's optimizations could be successfully translated.
 
+## Misc.
+
+I have not yet formatted the srouce code (`v fmt`) as I need to commit a some changes to the 
+V repository; ex. for enums.
+
 ## Status
 
 ### Implemented
 
+In no particular order:
+
 - Image
+- Context (partial)
+- Rgba (partial)
+- Gradient (partial)
+- Geometry (partial)
+- Format (partial)
+- `gg` rendering
+- Other core functionalities, ex. patterns, image converter, codec lookup, paths, matrices, global definitions, etc.
+
 - ...
+
+Status of specific API functions can be seen in `uncategorized.v`.
 
 ### Future Additions
 
 - `(Context) set_fill_style()` (and other applicable functions) with a Style sum type
-- Possible: Replace BLRgba32 with gx.rgba? (different byte order)
-  - Add BLRgba64 equivalent to vlib's gx?
-  - Either fix warnings somehow (from current union type) or do something else
+- ~~Possible: Replace BLRgba32 with gx.rgba? (different byte order)~~
+  - ~~Add BLRgba64 equivalent to vlib's gx~~
+  - ~~Either fix warnings somehow (from current union type) or~~ do something else
 - `BLFontData` and `BLFontManager`
-  - Possible: Or see if vlib font handling is sufficient
+  - Perhaps vlib font handling is sufficient
 - `BLGlyphBuffer` and `BLGlyphRun` implementations via `[]rune`
 - `BLMatrix2D`
-  - Possible: Unless a V matrix lib exists?
+  - Perhaps unless a V matrix lib exists
 - `BLPixelConverter`
 - `BLRegion` (undecided)
 - Short doc

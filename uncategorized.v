@@ -235,20 +235,20 @@ fn C.blFormatInfoSanitize(/*mut*/ self &C.BLFormatInfo) BLResult
 
 fn C.blGradientInit(/*mut*/ self &C.BLGradientCore) BLResult
 // fn C.blGradientInitAs(/*mut*/ self &C.BLGradientCore, @type u32, values voidptr, extendMode u32, stops &C.BLGradientStop, n size_t, m &C.BLMatrix2D) BLResult
-fn C.blGradientDestroy(/*mut*/ self &C.BLGradientCore) BLResult
+// fn C.blGradientDestroy(/*mut*/ self &C.BLGradientCore) BLResult
 fn C.blGradientReset(/*mut*/ self &C.BLGradientCore) BLResult
 fn C.blGradientAssignMove(/*mut*/ self &C.BLGradientCore, /*mut*/ other &C.BLGradientCore) BLResult
 fn C.blGradientAssignWeak(/*mut*/ self &C.BLGradientCore, other &C.BLGradientCore) BLResult
 fn C.blGradientCreate(/*mut*/ self &C.BLGradientCore, @type u32, values voidptr, extendMode u32, stops &C.BLGradientStop, n size_t, m &C.BLMatrix2D) BLResult
 fn C.blGradientShrink(/*mut*/ self &C.BLGradientCore) BLResult
 fn C.blGradientReserve(/*mut*/ self &C.BLGradientCore, n size_t) BLResult
-fn C.blGradientGetType(self &C.BLGradientCore) u32
-fn C.blGradientSetType(/*mut*/ self &C.BLGradientCore, @type u32) BLResult
+// fn C.blGradientGetType(self &C.BLGradientCore) u32
+// fn C.blGradientSetType(/*mut*/ self &C.BLGradientCore, @type u32) BLResult
 fn C.blGradientGetValue(self &C.BLGradientCore, index size_t) f64
 fn C.blGradientSetValue(/*mut*/ self &C.BLGradientCore, index size_t, value f64) BLResult
 // fn C.blGradientSetValues(/*mut*/ self &C.BLGradientCore, index size_t, values &C.double, n size_t) BLResult
-fn C.blGradientGetExtendMode(/*mut*/ self &C.BLGradientCore) u32
-fn C.blGradientSetExtendMode(/*mut*/ self &C.BLGradientCore, extendMode u32) BLResult
+// fn C.blGradientGetExtendMode(/*mut*/ self &C.BLGradientCore) u32
+// fn C.blGradientSetExtendMode(/*mut*/ self &C.BLGradientCore, extendMode u32) BLResult
 fn C.blGradientGetSize(self &C.BLGradientCore) size_t
 fn C.blGradientGetCapacity(self &C.BLGradientCore) size_t
 fn C.blGradientGetStops(self &C.BLGradientCore) &C.BLGradientStop

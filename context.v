@@ -123,7 +123,7 @@ pub fn (ctx &Context) set_comp_op(comp_op CompOp) {
 [inline]
 pub fn (ctx &Context) set_fill_color(color Rgba) {
 	func := ctx.impl.virt.setStyleRgba32[C_OpType.fill]
-	res := func(ctx.impl, color.raw())
+	res := func(ctx.impl, color.value)
 	// TODO: cgen checker bug
 	// res := ctx.impl.virt.setStyleRgba32[C_OpType.fill](ctx.impl, rgba32.value)
 	if res != 0 {
@@ -172,7 +172,7 @@ pub fn (ctx &Context) set_fill_pattern(pattern &Pattern) {
 [inline]
 pub fn (ctx &Context) set_stroke_color(color Rgba) {
 	func := ctx.impl.virt.setStyleRgba32[C_OpType.stroke]
-	res := func(ctx.impl, color.raw())
+	res := func(ctx.impl, color.value)
 	// TODO: cgen checker bug
 	// res := ctx.impl.virt.setStyleRgba32[C_OpType.stroke](ctx.impl, rgba32.value)
 	if res != 0 {

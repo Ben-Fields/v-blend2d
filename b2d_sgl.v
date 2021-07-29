@@ -4,12 +4,17 @@ import sokol.gfx
 import sokol.sgl
 import gg
 
-// TODO: `if you need to destroy resources before sg_shutdown(), call:  sg_destroy_image(sg_image img)`
+// TODO: Provide cleanup fn:
+// From sokol doc: `if you need to destroy resources before sg_shutdown(), call: sg_destroy_image(sg_image img)`
+
+// ============================================================================
+// Graphics - Definitions
+// ============================================================================
 
 // Wrap the specific Sokol Image config & render data in a struct to make drawing to window easier, similar to gg.
 
 // Image Buffer. Create one for your image to render with `gg`.
-struct ImageBuffer {
+pub struct ImageBuffer {
 	bimg Image          // Blend2D image
 	simg C.sg_image     // Sokol image
 	// Formatted buffer
@@ -23,7 +28,17 @@ pub mut:
 	y int
 	w int
 	h int
+	// Whether to auto-scale posiiton accounting for dpi
+	dpi_aware_pos bool = true
+	// Whether to auto-scale dimensions accounting for dpi. 
+	// Defaults to false, as you probably should render the full 
+	// res in the blend2d image and not scale it up.
+	dpi_aware_scale bool // = false
 }
+
+// ============================================================================
+// Graphics - Init
+// ============================================================================
 
 // Create an Image Buffer for rendering the specified image. Default rendering dimensions are equal to the image dimensions.
 pub fn new_image_buffer(img Image) ImageBuffer {
@@ -64,8 +79,12 @@ pub fn new_image_buffer(img Image) ImageBuffer {
 	return img_buf
 }
 
+// ============================================================================
+// Graphics - Draw
+// ============================================================================
+
 // Update and draw the image to the specified `gg` context.
-pub fn (img_buf ImageBuffer) draw(ctx gg.Context) {
+pub fn (img_buf ImageBuffer) draw(gg gg.Context) {
 	// Convert the pixel format to 32-bit RGBA byte order, the only format that sokol will universally accept.
 	// TODO: Need better/more efficient method other than comverting on CPU every frame, but this is the best for now.
 	//   - As image size increases, performance approaches ~50% original.
@@ -87,12 +106,24 @@ pub fn (img_buf ImageBuffer) draw(ctx gg.Context) {
 	v0 := f32(0.0)
 	u1 := f32(1.0)
 	v1 := f32(1.0)
-	x0 := f32(img_buf.x)
-	y0 := f32(img_buf.y)
-	x1 := f32(img_buf.x + img_buf.w)
-	y1 := f32(img_buf.y + img_buf.h)
+	mut x := f32(img_buf.x)
+	mut y := f32(img_buf.y)
+	mut w := f32(img_buf.w)
+	mut h := f32(img_buf.h)
+	if img_buf.dpi_aware_pos {
+		x *= gg.scale
+		y *= gg.scale
+	}
+	if img_buf.dpi_aware_scale {
+		w *= gg.scale
+		h *= gg.scale
+	}
+	x0 := f32(x)
+	y0 := f32(y)
+	x1 := f32(x + w)
+	y1 := f32(y + h)
 	// Queue draw command using sokol.gl
-	sgl.load_pipeline(ctx.timage_pip)
+	sgl.load_pipeline(gg.timage_pip)
 	sgl.enable_texture()
 	sgl.texture(img_buf.simg)
 	sgl.begin_quads()
@@ -106,18 +137,30 @@ pub fn (img_buf ImageBuffer) draw(ctx gg.Context) {
 }
 
 // Draw the currently stored image to the specified `gg` context.
-pub fn (img_buf ImageBuffer) draw_cached(ctx gg.Context) {
+pub fn (img_buf ImageBuffer) draw_cached(gg gg.Context) {
 	// Image rendering coordinates
 	u0 := f32(0.0)
 	v0 := f32(0.0)
 	u1 := f32(1.0)
 	v1 := f32(1.0)
-	x0 := f32(img_buf.x)
-	y0 := f32(img_buf.y)
-	x1 := f32(img_buf.x + img_buf.w)
-	y1 := f32(img_buf.y + img_buf.h)
+	mut x := f32(img_buf.x)
+	mut y := f32(img_buf.y)
+	mut w := f32(img_buf.w)
+	mut h := f32(img_buf.h)
+	if img_buf.dpi_aware_pos {
+		x *= gg.scale
+		y *= gg.scale
+	}
+	if img_buf.dpi_aware_scale {
+		w *= gg.scale
+		h *= gg.scale
+	}
+	x0 := f32(x)
+	y0 := f32(y)
+	x1 := f32(x + w)
+	y1 := f32(y + h)
 	// Queue draw command using sokol.gl
-	sgl.load_pipeline(ctx.timage_pip)
+	sgl.load_pipeline(gg.timage_pip)
 	sgl.enable_texture()
 	sgl.texture(img_buf.simg)
 	sgl.begin_quads()
@@ -132,7 +175,7 @@ pub fn (img_buf ImageBuffer) draw_cached(ctx gg.Context) {
 
 // Update and draw the image to the specified `gg` context.
 // Unconverted pixel format, so components may be swapped.
-pub fn (img_buf ImageBuffer) draw_raw(ctx gg.Context) {
+pub fn (img_buf ImageBuffer) draw_raw(gg gg.Context) {
 	// Update the sokol.gfx image with the blend2d one
 	mut image_content := C.sg_image_data{
 		// subimage [6][16]C.sg_range
@@ -147,12 +190,24 @@ pub fn (img_buf ImageBuffer) draw_raw(ctx gg.Context) {
 	v0 := f32(0.0)
 	u1 := f32(1.0)
 	v1 := f32(1.0)
-	x0 := f32(img_buf.x)
-	y0 := f32(img_buf.y)
-	x1 := f32(img_buf.x + img_buf.w)
-	y1 := f32(img_buf.y + img_buf.h)
+	mut x := f32(img_buf.x)
+	mut y := f32(img_buf.y)
+	mut w := f32(img_buf.w)
+	mut h := f32(img_buf.h)
+	if img_buf.dpi_aware_pos {
+		x *= gg.scale
+		y *= gg.scale
+	}
+	if img_buf.dpi_aware_scale {
+		w *= gg.scale
+		h *= gg.scale
+	}
+	x0 := f32(x)
+	y0 := f32(y)
+	x1 := f32(x + w)
+	y1 := f32(y + h)
 	// Queue draw command using sokol.gl
-	sgl.load_pipeline(ctx.timage_pip)
+	sgl.load_pipeline(gg.timage_pip)
 	sgl.enable_texture()
 	sgl.texture(img_buf.simg)
 	sgl.begin_quads()

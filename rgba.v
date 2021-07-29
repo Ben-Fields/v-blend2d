@@ -1,11 +1,27 @@
 module blend2d
 
-// The structs ideally would be comptime-defined to be the native byte order (little/big endian).
-// Since that is not possible, the getters / setters will be comptime defined to treat the fields 
-//   as a, r, g, b, depending on the native byte order.
-// The only downside is extra writing initially for the comptime conditionals and lack of default 
-//   values. These unions couldn't be used alone anyway since V treats them as "unsafe", which 
-//   would be annoying to use in practice unwrapped.
+// There is an implementation in pure V in this same repository, but it does not compile due 
+// to the note in `gradient.v`. Essentially, the library needs to convert the color type 
+// somewhere to `uint64_t`, and the V-defined version causes a compiler error.
+
+// This version, using Blend2D's own data structure, has the benefit of allowing one to 
+// access components and such directly, since V thinks it's a normal struct. The below are 
+// just declarations, so the original behavior and data orientation defined in the Blend2D
+// library are conserved. 
+
+// I attempted to avoid the divergence from conventional V behavior, causing potentially 
+// unexpected results if one glosses over the details of these definitions, but it seems that 
+// there are simply things you cannot do in V in the name of "safety".
+
+// This is fine since the pure V version was getting overly verbose anyway, as compile-time 
+// execution and data layout are two lacking areas of V, or they simply haven't been finished 
+// yet.
+
+// Note: As a result of the above, byte order is managed by the Bled2D library, and the below 
+// initializers simply populate the data structure (unlike the pure V version).
+
+// TODO: In the instances where you want to init the struct with `value`, you cannot because 
+// V inits the other fields (which overlap in memory) to 0. 
 
 // ============================================================================
 // RGBA 32-bit
@@ -13,123 +29,73 @@ module blend2d
 
 // ### Definition
 
-struct Rgba_Components {
-mut: // Endian: Little Big
-	b1 byte //   b      a
-	b2 byte //   g      r
-	b3 byte //   r      g
-	b4 byte //   a      b
+struct C.BLRgba32 {
+pub mut:
+	// union {
+		value u32
+		// struct {
+		// 	$if little_endian {
+				b byte
+				g byte
+				r byte
+				a byte
+	// 		} $ else {
+	// 			a byte
+	// 			r byte
+	// 			g byte
+	// 			b byte
+	// 		}
+	// 	}
+	// }
 }
 // 32-bit RGBA color (8-bits per component) stored as `0xAARRGGBB`.
-pub union Rgba {
-mut:
-	components Rgba_Components
-	value      u32
-}
+// This is a composite struct defined outside of V, so behavior is not 
+// strightforward. See definition.
+pub type Rgba = C.BLRgba32
 
 // ### Init
 
-// Returns a new 32-bit RGBA color (Rgba32) from byte components.
+// Returns a new 32-bit color (Rgba32) from RGBA byte components.
 [inline]
 pub fn rgba(r byte, g byte, b byte, a byte) Rgba {
-	$if little_endian {
-		return Rgba {
-			components: Rgba_Components{
-				b1: b
-				b2: g
-				b3: r
-				b4: a
-			}
-		}
-	} $else {
-		return Rgba {
-			components: Rgba_Components{
-				b1: a
-				b2: r
-				b3: g
-				b4: b
-			}
-		}
+	return Rgba {
+		b: b
+		g: g
+		r: r
+		a: a
 	}
 }
 
-// Returns a new 32-bit RGBA color (Rgba32) from byte components, with full alpha.
+// Returns a new 32-bit color (Rgba32) from RGBA byte components, with full alpha.
 [inline]
 pub fn rgb(r byte, g byte, b byte) Rgba {
-	$if little_endian {
-		return Rgba {
-			components: Rgba_Components{
-				b1: b
-				b2: g
-				b3: r
-				b4: 255
-			}
-		}
-	} $else {
-		return Rgba {
-			components: Rgba_Components{
-				b1: 255
-				b2: r
-				b3: g
-				b4: b
-			}
-		}
+	return Rgba {
+		b: b
+		g: g
+		r: r
+		a: 255
 	}
 }
 
-// Returns a new 32-bit RGBA color (Rgba32) from a 32-bit hex value.
+// Returns a new 32-bit color (Rgba32) from a 32-bit RGBA hex value.
 [inline]
 pub fn rgba_hex(value u32) Rgba {
-	$if little_endian {
-		return Rgba {
-			components: Rgba_Components{
-				b1: byte(value >> 8) // b
-				b2: byte(value >> 16) // g
-				b3: byte(value >> 24) // r
-				b4: byte(value) // a
-			}
-		}
-	} $else {
-		return Rgba {
-			components: Rgba_Components{
-				b1: byte(value) // a
-				b2: byte(value >> 24) // r
-				b3: byte(value >> 16) // g
-				b4: byte(value >> 8) // b
-			}
-		}
+	return Rgba {
+		b: byte(value >> 8)
+		g: byte(value >> 16)
+		r: byte(value >> 24)
+		a: byte(value)
 	}
 }
 
-// Returns a new 32-bit RGBA color (Rgba32) from a 32-bit hex value, with full alpha.
+// Returns a new 32-bit color (Rgba32) from a 32-bit RGBA hex value, with full alpha.
 [inline]
 pub fn rgb_hex(value u32) Rgba {
-	// println("${value:x}")
-	// println("${(value | 0xFF000000):x}")
-	// return Rgba {
-	// 	value: value | 0xFF000000
-	// }
-	// return Rgba {
-	// 	value: () | () | () | 255
-	// }
-	$if little_endian {
-		return Rgba {
-			components: Rgba_Components{
-				b1: byte(value & 0xFF) // b
-				b2: byte(value >> 8 & 0xFF) // g
-				b3: byte(value >> 16 & 0xFF) // r
-				b4: 255
-			}
-		}
-	} $else {
-		return Rgba {
-			components: Rgba_Components{
-				b1: 255
-				b2: byte(value >> 16) // r
-				b3: byte(value >> 8) // g
-				b4: byte(value) // b
-			}
-		}
+	return Rgba {
+		b: byte(value)
+		g: byte(value >> 8)
+		r: byte(value >> 16)
+		a: 255
 	}
 }
 
@@ -139,16 +105,14 @@ pub fn rgb_hex(value u32) Rgba {
 pub fn bgra_raw(value u32) Rgba {
 	$if little_endian {
 		return Rgba {
-			value: value
+			value: value // TODO: Does not work because V inits the other fields to 0.
 		}
 	} $else {
 		return Rgba {
-			components: Rgba_Components{
-				b1: byte(value) // a
-				b2: byte(value >> 8) // r
-				b3: byte(value >> 16) // g
-				b4: byte(value >> 24) // b
-			}
+			b: byte(value >> 24)
+			g: byte(value >> 16)
+			r: byte(value >> 8)
+			a: byte(value)
 		}
 	}
 }
@@ -159,631 +123,148 @@ pub fn bgra_raw(value u32) Rgba {
 pub fn argb_raw(value u32) Rgba {
 	$if little_endian {
 		return Rgba {
-			components: Rgba_Components{
-				b1: byte(value >> 24) // b
-				b2: byte(value >> 16) // g
-				b3: byte(value >> 8) // r
-				b4: byte(value) // a
-			}
+			b: byte(value)
+			g: byte(value >> 8)
+			r: byte(value >> 16)
+			a: byte(value >> 24)
 		}
 	} $else {
 		return Rgba {
-			value: value
+			value: value // TODO: Does not work because V inits the other fields to 0.
 		}
-	}
-}
-
-// ### Access
-
-// Returns the r (red) component.
-[inline]
-pub fn (rgba Rgba) r() byte {
-	unsafe {
-		$if little_endian {
-			return rgba.components.b3
-		} $else {
-			return rgba.components.b2
-		}
-	}
-}
-
-// Returns the g (green) component.
-[inline]
-pub fn (rgba Rgba) g() byte {
-	unsafe {
-		$if little_endian {
-			return rgba.components.b2
-		} $else {
-			return rgba.components.b3
-		}
-	}
-}
-
-// Returns the b (blue) component.
-[inline]
-pub fn (rgba Rgba) b() byte {
-	unsafe {
-		$if little_endian {
-			return rgba.components.b1
-		} $else {
-			return rgba.components.b4
-		}
-	}
-}
-
-// Returns the a (alpha) component.
-[inline]
-pub fn (rgba Rgba) a() byte {
-	unsafe {
-		$if little_endian {
-			return rgba.components.b4
-		} $else {
-			return rgba.components.b1
-		}
-	}
-}
-
-// Returns the raw 32-bit value.
-// Result depends whether system is big- or little-endian.
-[inline]
-pub fn (rgba Rgba) raw() u32 {
-	unsafe {
-		return rgba.value
 	}
 }
 
 // ### Modify
 
-// Set the 32-bit color value by components.
-[inline]
-pub fn (rgba Rgba) set(r byte, g byte, b byte, a byte) {
-	unsafe {
-		$if little_endian {
-			rgba.components.b3 = r
-			rgba.components.b2 = g
-			rgba.components.b1 = b
-			rgba.components.b4 = a
-		} $else {
-			rgba.components.b2 = r
-			rgba.components.b3 = g
-			rgba.components.b4 = b
-			rgba.components.b1 = a
-		}
-	}
-}
-
 // Set the 32-bit color value.
 [inline]
-pub fn (rgba Rgba) set_hex(value u32) {
-	unsafe {
-		$if little_endian {
-			rgba.components.b1 = byte(value >> 8) // b
-			rgba.components.b2 = byte(value >> 16) // g
-			rgba.components.b3 = byte(value >> 24) // r
-			rgba.components.b4 = byte(value) // a
-		} $else {
-			rgba.components.b1 = byte(value) // a
-			rgba.components.b2 = byte(value >> 24) // r
-			rgba.components.b3 = byte(value >> 16) // g
-			rgba.components.b4 = byte(value >> 8) // b
-		}
-	}
-}
-
-// Set the r (red) component.
-[inline]
-pub fn (rgba Rgba) set_r(r byte) {
-	unsafe {
-		$if little_endian {
-			rgba.components.b3 = r
-		} $else {
-			rgba.components.b2 = r
-		}
-	}
-}
-
-// Set the g (green) component.
-[inline]
-pub fn (rgba Rgba) set_g(g byte) {
-	unsafe {
-		$if little_endian {
-			rgba.components.b2 = g
-		} $else {
-			rgba.components.b3 = g
-		}
-	}
-}
-
-// Set the b (blue) component.
-[inline]
-pub fn (rgba Rgba) set_b(b byte) {
-	unsafe {
-		$if little_endian {
-			rgba.components.b1 = b
-		} $else {
-			rgba.components.b4 = b
-		}
-	}
-}
-
-// Set the a (alpha) component.
-[inline]
-pub fn (rgba Rgba) set_a(a byte) {
-	unsafe {
-		$if little_endian {
-			rgba.components.b4 = a
-		} $else {
-			rgba.components.b1 = a
-		}
-	}
+pub fn (mut rgba Rgba) set_hex(value u32) {
+	rgba.b = byte(value >> 8)
+	rgba.g = byte(value >> 16)
+	rgba.r = byte(value >> 24)
+	rgba.a = byte(value)
 }
 
 // ============================================================================
 // RGBA 64-bit
-// ============================================================================
-
-struct Rgba64_Components {
-mut:
-	b u16
-	g u16
-	r u16
-	a u16
-}
-// 64-bit RGBA color (16-bit per component) stored as `0xAAAARRRRGGGGBBBB`.
-pub union Rgba64 {
-mut:
-	components Rgba64_Components
-	value      u64
-}
-
-// ### Init
-
-// Returns a new 64-bit RGBA color (Rgba64) from a 64-bit value.
-[inline]
-pub fn rgba64_hex(value u64) Rgba64 {
-	return Rgba64 {
-		value: value
-	}
-}
-
-// Returns a new 64-bit RGBA color (Rgba64) from byte components.
-[inline]
-pub fn rgba64(r u16, g u16, b u16, a u16) Rgba64 {
-	return Rgba64 {
-		components: Rgba64_Components{
-			b: b
-			g: g
-			r: r
-			a: a
-		}
-	}
-}
-
-// Returns a new 64-bit RGBA color (Rgba64) from byte components, with full alpha.
-[inline]
-pub fn rgb64(r byte, g byte, b byte) Rgba64 {
-	return Rgba64 {
-		components: Rgba64_Components{
-			b: b
-			g: g
-			r: r
-		}
-	}
-}
-
-// ### Access
-
-// Returns the r (red) component.
-[inline]
-pub fn (rgba Rgba64) r() u16 {
-	unsafe {
-		return rgba.components.r
-	}
-}
-
-// Returns the g (green) component.
-[inline]
-pub fn (rgba Rgba64) g() u16 {
-	unsafe {
-		return rgba.components.g
-	}
-}
-
-// Returns the b (blue) component.
-[inline]
-pub fn (rgba Rgba64) b() u16 {
-	unsafe {
-		return rgba.components.b
-	}
-}
-
-// Returns the a (alpha) component.
-[inline]
-pub fn (rgba Rgba64) a() u16 {
-	unsafe {
-		return rgba.components.a
-	}
-}
-
-// Returns the 32-bit value.
-[inline]
-pub fn (rgba Rgba64) value() u64 {
-	unsafe {
-		return rgba.value
-	}
-}
-
-// ### Modify
-
-// Set the 32-bit color value by components.
-[inline]
-pub fn (rgba Rgba64) set(r u16, g u16, b u16, a u16) {
-	unsafe {
-		rgba.components.r = r
-		rgba.components.g = g
-		rgba.components.b = b
-		rgba.components.a = a
-	}
-}
-
-// Set the 32-bit color value.
-[inline]
-pub fn (rgba Rgba64) set_hex(value u64) {
-	unsafe {
-		rgba.value = value
-	}
-}
-
-// Set the r (red) component.
-[inline]
-pub fn (rgba Rgba64) set_r(r u16) {
-	unsafe {
-		rgba.components.r = r
-	}
-}
-
-// Set the g (green) component.
-[inline]
-pub fn (rgba Rgba64) set_g(g u16) {
-	unsafe {
-		rgba.components.g = g
-	}
-}
-
-// Set the b (blue) component.
-[inline]
-pub fn (rgba Rgba64) set_b(b u16) {
-	unsafe {
-		rgba.components.b = b
-	}
-}
-
-// Set the a (alpha) component.
-[inline]
-pub fn (rgba Rgba64) set_a(a u16) {
-	unsafe {
-		rgba.components.a = a
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* The old ways
-
-// ============================================================================
-// RGBA 32-bit
 // ============================================================================
 
 // ### Definition
 
-struct Rgba_Components {
-mut:
-	// $if C.BL_BYTE_ORDER == 1234 { // LITTLE ENDIAN
-		b byte
-		g byte
-		r byte
-		a byte = 255
-	// } $else {
-	// 	a byte = 255
-	// 	r byte
-	// 	g byte
-	// 	b byte
+struct C.BLRgba64 {
+pub mut:
+	// union {
+		value u64
+		// struct {
+		// 	$if little_endian {
+				b u16
+				g u16
+				r u16
+				a u16
+	// 		} $ else {
+	// 			a u16
+	// 			r u16
+	// 			g u16
+	// 			b u16
+	// 		}
+	// 	}
 	// }
 }
-// 32-bit RGBA color (8-bits per component) stored as `0xAARRGGBB`.
-pub union Rgba {
-mut:
-	components Rgba_Components
-	value      u32
-}
+// 64-bit RGBA color (16-bits per component) stored as `0xAAAARRRRGGGGBBBB`.
+// This is a composite struct defined outside of V, so behavior is not 
+// strightforward. See definition.
+pub type Rgba64 = C.BLRgba64
 
 // ### Init
 
-// Returns a new 32-bit RGBA color (Rgba32) from a 32-bit value.
+// Returns a new 64-bit color (Rgba64) from RGBA components.
 [inline]
-pub fn rgba_hex(value u32) Rgba {
-	return Rgba {
-		value: value
+pub fn rgba_64(r u16, g u16, b u16, a u16) Rgba64 {
+	return Rgba64 {
+		b: b
+		g: g
+		r: r
+		a: a
 	}
 }
 
-// Returns a new 32-bit RGBA color (Rgba32) from byte components.
+// Returns a new 64-bit color (Rgba64) from RGBA components, with full alpha.
 [inline]
-pub fn rgba(r byte, g byte, b byte, a byte) Rgba {
-	return Rgba {
-		components: Rgba_Components{
-			b: b
-			g: g
-			r: r
-			a: a
+pub fn rgb_64(r u16, g u16, b u16) Rgba64 {
+	return Rgba64 {
+		b: b
+		g: g
+		r: r
+		a: 0xFFFF
+	}
+}
+
+// Returns a new 64-bit color (Rgba64) from a 64-bit RGBA hex value.
+[inline]
+pub fn rgba_hex_64(value u64) Rgba64 {
+	return Rgba64 {
+		b: u16(value >> 16)
+		g: u16(value >> 32)
+		r: u16(value >> 48)
+		a: u16(value)
+	}
+}
+
+// Returns a new 64-bit color (Rgba64) from a 64-bit RGBA hex value, with full alpha.
+[inline]
+pub fn rgb_hex_64(value u64) Rgba64 {
+	return Rgba64 {
+		b: u16(value)
+		g: u16(value >> 16)
+		r: u16(value >> 32)
+		a: 0xFFFF
+	}
+}
+
+// Returns a new 64-bit RGBA color (Rgba64) from a raw 64-bit value.
+// Native for little-endian systems. Conversion for big-endian systems.
+[inline]
+pub fn bgra_raw_64(value u64) Rgba64 {
+	$if little_endian {
+		return Rgba64 {
+			value: value // TODO: Does not work because V inits the other fields to 0.
+		}
+	} $else {
+		return Rgba64 {
+			b: u16(value >> 48)
+			g: u16(value >> 32)
+			r: u16(value >> 16)
+			a: u16(value)
 		}
 	}
 }
 
-// Returns a new 32-bit RGBA color (Rgba32) from byte components, with full alpha.
+// Returns a new 64-bit RGBA color (Rgba64) from a raw 64-bit value.
+// Native for big-endian systems. Conversion for little-endian systems.
 [inline]
-pub fn rgb(r byte, g byte, b byte) Rgba {
-	return Rgba {
-		components: Rgba_Components{
-			b: b
-			g: g
-			r: r
+pub fn argb_raw_64(value u64) Rgba64 {
+	$if little_endian {
+		return Rgba64 {
+			b: byte(value)
+			g: byte(value >> 16)
+			r: byte(value >> 32)
+			a: byte(value >> 48)
 		}
-	}
-}
-
-// ### Access
-
-// Returns the r (red) component.
-[inline]
-pub fn (rgba Rgba) r() byte {
-	unsafe {
-		return rgba.components.r
-	}
-}
-
-// Returns the g (green) component.
-[inline]
-pub fn (rgba Rgba) g() byte {
-	unsafe {
-		return rgba.components.g
-	}
-}
-
-// Returns the b (blue) component.
-[inline]
-pub fn (rgba Rgba) b() byte {
-	unsafe {
-		return rgba.components.b
-	}
-}
-
-// Returns the a (alpha) component.
-[inline]
-pub fn (rgba Rgba) a() byte {
-	unsafe {
-		return rgba.components.a
-	}
-}
-
-// Returns the 32-bit value.
-[inline]
-pub fn (rgba Rgba) value() u32 {
-	unsafe {
-		return rgba.value
+	} $else {
+		return Rgba64 {
+			value: value // TODO: Does not work because V inits the other fields to 0.
+		}
 	}
 }
 
 // ### Modify
 
-// Set the 32-bit color value by components.
-[inline]
-pub fn (rgba Rgba) set(r byte, g byte, b byte, a byte) {
-	unsafe {
-		rgba.components.r = r
-		rgba.components.g = g
-		rgba.components.b = b
-		rgba.components.a = a
-	}
-}
-
 // Set the 32-bit color value.
 [inline]
-pub fn (rgba Rgba) set_hex(value u32) {
-	unsafe {
-		rgba.value = value
-	}
+pub fn (mut rgba Rgba64) set_hex(value u64) {
+	rgba.b = u16(value >> 16)
+	rgba.g = u16(value >> 32)
+	rgba.r = u16(value >> 48)
+	rgba.a = u16(value)
 }
-
-// Set the r (red) component.
-[inline]
-pub fn (rgba Rgba) set_r(r byte) {
-	unsafe {
-		rgba.components.r = r
-	}
-}
-
-// Set the g (green) component.
-[inline]
-pub fn (rgba Rgba) set_g(g byte) {
-	unsafe {
-		rgba.components.g = g
-	}
-}
-
-// Set the b (blue) component.
-[inline]
-pub fn (rgba Rgba) set_b(b byte) {
-	unsafe {
-		rgba.components.b = b
-	}
-}
-
-// Set the a (alpha) component.
-[inline]
-pub fn (rgba Rgba) set_a(a byte) {
-	unsafe {
-		rgba.components.a = a
-	}
-}
-
-// ============================================================================
-// RGBA 64-bit
-// ============================================================================
-
-struct Rgba64_Components {
-mut:
-	b u16
-	g u16
-	r u16
-	a u16
-}
-// 64-bit RGBA color (16-bit per component) stored as `0xAAAARRRRGGGGBBBB`.
-pub union Rgba64 {
-mut:
-	components Rgba64_Components
-	value      u64
-}
-
-// ### Init
-
-// Returns a new 64-bit RGBA color (Rgba64) from a 64-bit value.
-[inline]
-pub fn rgba64_hex(value u64) Rgba64 {
-	return Rgba64 {
-		value: value
-	}
-}
-
-// Returns a new 64-bit RGBA color (Rgba64) from byte components.
-[inline]
-pub fn rgba64(r u16, g u16, b u16, a u16) Rgba64 {
-	return Rgba64 {
-		components: Rgba64_Components{
-			b: b
-			g: g
-			r: r
-			a: a
-		}
-	}
-}
-
-// Returns a new 64-bit RGBA color (Rgba64) from byte components, with full alpha.
-[inline]
-pub fn rgb64(r byte, g byte, b byte) Rgba64 {
-	return Rgba64 {
-		components: Rgba64_Components{
-			b: b
-			g: g
-			r: r
-		}
-	}
-}
-
-// ### Access
-
-// Returns the r (red) component.
-[inline]
-pub fn (rgba Rgba64) r() u16 {
-	unsafe {
-		return rgba.components.r
-	}
-}
-
-// Returns the g (green) component.
-[inline]
-pub fn (rgba Rgba64) g() u16 {
-	unsafe {
-		return rgba.components.g
-	}
-}
-
-// Returns the b (blue) component.
-[inline]
-pub fn (rgba Rgba64) b() u16 {
-	unsafe {
-		return rgba.components.b
-	}
-}
-
-// Returns the a (alpha) component.
-[inline]
-pub fn (rgba Rgba64) a() u16 {
-	unsafe {
-		return rgba.components.a
-	}
-}
-
-// Returns the 32-bit value.
-[inline]
-pub fn (rgba Rgba64) value() u64 {
-	unsafe {
-		return rgba.value
-	}
-}
-
-// ### Modify
-
-// Set the 32-bit color value by components.
-[inline]
-pub fn (rgba Rgba64) set(r u16, g u16, b u16, a u16) {
-	unsafe {
-		rgba.components.r = r
-		rgba.components.g = g
-		rgba.components.b = b
-		rgba.components.a = a
-	}
-}
-
-// Set the 32-bit color value.
-[inline]
-pub fn (rgba Rgba64) set_hex(value u64) {
-	unsafe {
-		rgba.value = value
-	}
-}
-
-// Set the r (red) component.
-[inline]
-pub fn (rgba Rgba64) set_r(r u16) {
-	unsafe {
-		rgba.components.r = r
-	}
-}
-
-// Set the g (green) component.
-[inline]
-pub fn (rgba Rgba64) set_g(g u16) {
-	unsafe {
-		rgba.components.g = g
-	}
-}
-
-// Set the b (blue) component.
-[inline]
-pub fn (rgba Rgba64) set_b(b u16) {
-	unsafe {
-		rgba.components.b = b
-	}
-}
-
-// Set the a (alpha) component.
-[inline]
-pub fn (rgba Rgba64) set_a(a u16) {
-	unsafe {
-		rgba.components.a = a
-	}
-}
-*/
