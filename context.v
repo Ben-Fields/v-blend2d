@@ -12,6 +12,104 @@ struct C.BLContextCore {
 // Rendering Context.
 type Context = C.BLContextCore
 
+// Information that can be used to customize the rendering context.
+struct C.BLContextCreateInfo {
+	// Create flags, see `BLContextCreateFlags`.
+	flags u32
+
+	// Number of worker threads to use for asynchronous rendering, if non-zero.
+	//
+	// If `threadCount` is zero it means to initialize the context for synchronous
+	// rendering. This means that every operation will take effect immediately.
+	// If `threadCount` is `1` it means that the rendering will be asynchronous,
+	// but no thread would be acquired from a thread-pool, because the user thread
+	// will be used as a worker. And finally, if `threadCount` is greater than `1`
+	// then total of `threadCount - 1` threads will be acquired from thread-pool
+	// and used as additional workers.
+	threadCount u32
+
+	// CPU features to use in isolated JIT runtime (if supported), only used
+	// when `flags` contains `BL_CONTEXT_CREATE_FLAG_OVERRIDE_CPU_FEATURES`.
+	cpuFeatures u32
+
+	// Currently unused
+	commandQueueLimit u32
+	reserved [4]u32
+}
+
+// Rendering context create-flags.
+[flag]
+pub enum ContextFlags {
+	unused_1
+	unused_2
+	unused_4
+	// Fallbacks to a synchronous rendering in case that the rendering engine
+	// wasn't able to acquire threads. This flag only makes sense when the
+	// asynchronous mode was specified by having `threadCount` greater than 0.
+	// If the rendering context fails to acquire at least one thread it would
+	// fallback to synchronous mode with no worker threads.
+	//
+	// \note If this flag is specified with `threadCount == 1` it means to
+	// immediately fallback to synchronous rendering. It's only practical to
+	// use this flag with 2 or more requested threads.
+	fallback_to_sync // = 0x00000008
+
+	unused_10
+	unused_20
+	unused_40
+	unused_80
+	unused_100
+	unused_200
+	unused_400
+	unused_800
+	unused_1000
+	unused_2000
+	unused_4000
+	unused_8000
+	unused_10000
+	unused_20000
+	unused_40000
+	unused_80000
+	unused_100000
+	unused_200000
+	unused_400000
+	unused_800000
+	// If this flag is specified and asynchronous rendering is enabled then
+	// the context would create its own isolated thread-pool, which is useful
+	// for debugging purposes.
+	//
+	// Do not use this flag in production as rendering contexts with isolated
+	// thread-pool have to create and destroy all threads they use. This flag
+	// is only useful for testing, debugging, and isolated benchmarking.
+	isolated_thread_pool // = 0x01000000
+
+	// If this flag is specified and JIT pipeline generation enabled then the
+	// rendering context would create its own isolated JIT runtime. which is
+	// useful for debugging purposes. This flag will be ignored if JIT pipeline
+	// generation is either not supported or was disabled by other flags.
+	//
+	// Do not use this flag in production as rendering contexts with isolated
+	// JIT runtime do not use global pipeline cache, that's it, after the
+	// rendering context is destroyed the JIT runtime is destroyed with it with
+	// all compiled pipelines. This flag is only useful for testing, debugging,
+	// and isolated benchmarking.
+	isolated_jit_runtime // = 0x02000000
+
+	// Enables logging to stderr of isolated runtime.
+	//
+	// \note Must be used with \ref BL_CONTEXT_CREATE_FLAG_ISOLATED_JIT_RUNTIME
+	// otherwise it would have no effect.
+	isolated_jit_logging // = 0x04000000
+
+	// Override CPU features when creating isolated context.
+	override_cpu_features // = 0x08000000
+}
+
+pub struct ContextCfg {
+	flags ContextFlags
+	thread_count u32
+}
+
 // Composition & blending operator.
 pub enum CompOp {
 	src_over		// Source-over [default].
@@ -60,27 +158,33 @@ type ContextCookie = C.BLContextCookie
 fn C.blContextInitAs(self &C.BLContextCore, image &C.BLImageCore, options &C.BLContextCreateInfo) BLResult
 // Create a new rendering Context.
 [inline]
-pub fn new_context(target &Image) ?&Context {
-	context := &Context{}
-	res := C.blContextInitAs(context, target, 0)
+pub fn new_context(target &Image, cfg ContextCfg) ?&Context {
+	ctx := &Context{}
+	create_info := &C.BLContextCreateInfo{
+		flags: u32(cfg.flags)
+		threadCount: cfg.thread_count
+	}
+	res := C.blContextInitAs(ctx, target, create_info)
 	if res != 0 {
 		return IError(Result{
 			msg: "Could not create rendering context."
 			result: ResultCode(res)
 		})
 	}
-	return context
+	return ctx
 }
 
 fn C.blContextDestroy(self &C.BLContextCore) BLResult
 // Free the rendering Context data from memory. (Called by V's autofree engine).
+// Also detaches the rendering context, if not done so already.
 [inline]
 pub fn (ctx &Context) free() {
+	ctx.end()
 	C.blContextDestroy(ctx)
 }
 
 // ============================================================================
-// Context - Begin / End
+// Context - Begin / End / Sync
 // ============================================================================
 
 fn C.blContextEnd(self &C.BLContextCore) BLResult
@@ -94,6 +198,31 @@ pub fn (ctx &Context) end() {
 	if res != 0 {
 		panic(IError(Result{
 			msg: "Failed to detach/end rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Block until the command queue is completed.
+[inline]
+pub fn (ctx &Context) sync() {
+	// Hard reference to C enum since there is only one flag
+	res := ctx.impl.virt.flush(ctx.impl, C.BL_CONTEXT_FLUSH_SYNC)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Sync' operation failed for rendering context."
+			result: ResultCode(res)
+		}))
+	}
+}
+
+// Flush the rendering context, whatever that means.
+[inline]
+pub fn (ctx &Context) flush() {
+	res := ctx.impl.virt.flush(ctx.impl, 0)
+	if res != 0 {
+		panic(IError(Result{
+			msg: "'Flush' operation failed for rendering context."
 			result: ResultCode(res)
 		}))
 	}

@@ -66,6 +66,22 @@ pub fn point(x f64, y f64) Point {
 	}
 }
 
+fn (a Point) + (b Point) Point {
+	return Point{a.x + b.x, a.y + b.y}
+}
+
+fn (a Point) - (b Point) Point {
+	return Point{a.x - b.x, a.y - b.y}
+}
+
+fn (a Point) * (b Point) Point {
+	return Point{a.x * b.x, a.y * b.y}
+}
+
+fn (a Point) / (b Point) Point {
+	return Point{a.x / b.x, a.y / b.y}
+}
+
 struct C.BLPointI {
 pub mut:
 	x int
@@ -81,6 +97,22 @@ pub fn point_i(x int, y int) PointI {
 		x: x
 		y: y
 	}
+}
+
+fn (a PointI) + (b PointI) PointI {
+	return PointI{a.x + b.x, a.y + b.y}
+}
+
+fn (a PointI) - (b PointI) PointI {
+	return PointI{a.x - b.x, a.y - b.y}
+}
+
+fn (a PointI) * (b PointI) PointI {
+	return PointI{a.x * b.x, a.y * b.y}
+}
+
+fn (a PointI) / (b PointI) PointI {
+	return PointI{a.x / b.x, a.y / b.y}
 }
 
 // ============================================================================

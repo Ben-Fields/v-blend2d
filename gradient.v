@@ -54,8 +54,8 @@ struct C.BLGradientStop {
 pub mut:
 	offset f64
 	rgba Rgba64 // TODO: With the pure_v version of rgba.v, this should be `Rgba64`, but the C compiler tries to convert to uint64_t and fails.
-	         //       This behavior only happens when there is an init function defined, like below.
-	         //         (That is, any funciton that returns `GradientStop`).
+	            //       This behavior only happens when there is an init function defined, like below.
+	            //       (That is, any funciton that returns `GradientStop`).
 }
 pub type GradientStop = C.BLGradientStop
 
